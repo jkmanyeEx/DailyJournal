@@ -972,6 +972,18 @@ const loadBackupSettings = () => {
   if (saved) {
     backupSettings.value = { ...backupSettings.value, ...JSON.parse(saved) }
   }
+  if (!backupSettings.value.lastBackupDate) {
+    const installDate = localStorage.getItem('journal-install-date')
+    if (installDate) {
+      backupSettings.value.lastBackupDate = installDate
+    } else {
+      // First time user - set install date to now
+      const now = new Date().toISOString()
+      localStorage.setItem('journal-install-date', now)
+      backupSettings.value.lastBackupDate = now
+    }
+    saveBackupSettings()
+  }
 }
 
 const registerServiceWorker = async () => {
