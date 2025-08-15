@@ -1,17 +1,13 @@
 <template>
   <!-- Main App -->
-  <div class="app-container">
+  <div class="app-container" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
     <!-- Header -->
     <header class="app-header">
       <div class="header-wrapper">
         <div class="header-content">
           <!-- Fixed left container to always have consistent width -->
           <div class="header-left">
-            <button
-                v-if="currentView === 'home'"
-                @click="showCalendar"
-                class="back-button"
-            >
+            <button v-if="currentView === 'home'" @click="showCalendar" class="back-button">
               <Calendar class="icon-size" />
             </button>
           </div>
@@ -23,20 +19,10 @@
           <!-- Fixed right container to balance the header properly -->
           <div class="header-right">
             <!-- Added install button for PWA -->
-            <button
-                v-if="showInstallButton && currentView === 'home'"
-                @click="installPWA"
-                class="install-button"
-                title="Install App"
-            >
+            <button v-if="showInstallButton && currentView === 'home'" @click="installPWA" class="install-button" title="Install App">
               <Download class="icon-size" />
             </button>
-            <button
-                v-if="currentView === 'home'"
-                @click="showBackupMenu"
-                class="back-button"
-                title="Backup & Settings"
-            >
+            <button v-if="currentView === 'home'" @click="showBackupMenu" class="back-button" title="Backup & Settings">
               <Archive class="icon-size" />
             </button>
             <Transition name="slide-up-reverse">
@@ -218,14 +204,7 @@
             <h3 class="section-title">Recent Entries</h3>
             <div class="entries-list">
               <TransitionGroup name="stagger" appear>
-                <div
-                    v-for="(entry, index) in recentEntries"
-                    :key="entry.id"
-                    :style="{ '--delay': index * 0.1 + 's' }"
-                    @click="viewEntry(entry)"
-                    class="card entry-card stagger-item"
-                    :class="`stagger-delay-${Math.min(index, 9)}`"
-                >
+                <div v-for="(entry, index) in recentEntries" :key="entry.id" :style="{ '--delay': index * 0.1 + 's' }" @click="viewEntry(entry)" class="card entry-card stagger-item" :class="`stagger-delay-${Math.min(index, 9)}`">
                   <div class="entry-meta">
                     <span class="entry-date">{{ formatDate(entry.date) }}</span>
                   </div>
@@ -276,13 +255,7 @@
                   Export All Entries
                 </button>
                 <div class="file-input-wrapper">
-                  <input
-                      ref="fileInput"
-                      type="file"
-                      accept=".json"
-                      @change="importData"
-                      class="file-input"
-                  />
+                  <input ref="fileInput" type="file" accept=".json" @change="importData" class="file-input" />
                   <button class="btn-secondary full-width">
                     <Upload class="icon-size button-icon" />
                     Import Entries
@@ -297,20 +270,11 @@
               <div class="settings-list">
                 <label class="setting-item">
                   <span class="setting-label">Backup Reminders</span>
-                  <input
-                      v-model="backupSettings.reminders"
-                      type="checkbox"
-                      class="toggle-checkbox"
-                  />
+                  <input v-model="backupSettings.reminders" type="checkbox" class="toggle-checkbox" />
                 </label>
                 <label class="setting-item">
                   <span class="setting-label">Push Notifications</span>
-                  <input
-                      v-model="backupSettings.pushNotifications"
-                      type="checkbox"
-                      class="toggle-checkbox"
-                      @change="handlePushNotificationToggle"
-                  />
+                  <input v-model="backupSettings.pushNotifications" type="checkbox" class="toggle-checkbox" @change="handlePushNotificationToggle" />
                 </label>
                 <div v-if="backupSettings.reminders" class="sub-settings">
                   <label class="setting-item sub-setting">
@@ -331,31 +295,16 @@
               <div class="settings-list">
                 <label class="setting-item">
                   <span class="setting-label">Daily Reminders</span>
-                  <input
-                      v-model="writingReminderSettings.enabled"
-                      type="checkbox"
-                      class="toggle-checkbox"
-                      @change="saveWritingReminderSettings"
-                  />
+                  <input v-model="writingReminderSettings.enabled" type="checkbox" class="toggle-checkbox" @change="saveWritingReminderSettings" />
                 </label>
                 <label class="setting-item">
                   <span class="setting-label">Push Notifications</span>
-                  <input
-                      v-model="writingReminderSettings.pushNotifications"
-                      type="checkbox"
-                      class="toggle-checkbox"
-                      @change="handleWritingPushNotificationToggle"
-                  />
+                  <input v-model="writingReminderSettings.pushNotifications" type="checkbox" class="toggle-checkbox" @change="handleWritingPushNotificationToggle" />
                 </label>
                 <div v-if="writingReminderSettings.enabled" class="sub-settings">
                   <label class="setting-item sub-setting">
                     <span class="setting-label">Reminder time:</span>
-                    <input
-                        v-model="writingReminderSettings.time"
-                        type="time"
-                        class="setting-time-input"
-                        @change="saveWritingReminderSettings"
-                    />
+                    <input v-model="writingReminderSettings.time" type="time" class="setting-time-input" @change="saveWritingReminderSettings" />
                   </label>
                 </div>
               </div>
@@ -402,23 +351,13 @@
           <!-- Calendar Grid -->
           <div class="card">
             <div class="calendar-header">
-              <div v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
-                   :key="day"
-                   class="day-header">
+              <div v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day" class="day-header">
                 {{ day }}
               </div>
             </div>
 
             <div class="calendar-grid">
-              <div v-for="date in calendarDates"
-                   :key="date.key"
-                   class="calendar-date"
-                   :class="{
-                     'other-month': !date.isCurrentMonth,
-                     'has-entry': date.hasEntry,
-                     'is-today': date.isToday
-                   }"
-                   @click="date.hasEntry && selectDate(date.date)">
+              <div v-for="date in calendarDates" :key="date.key" class="calendar-date" :class="{'other-month': !date.isCurrentMonth, 'has-entry': date.hasEntry, 'is-today': date.isToday}" @click="date.hasEntry && selectDate(date.date)">
                 <span class="date-number">{{ date.day }}</span>
                 <div v-if="date.hasEntry" class="entry-dot"></div>
               </div>
@@ -431,14 +370,7 @@
               <h3 class="section-title">{{ formatSelectedDate }}</h3>
               <div class="entries-list">
                 <TransitionGroup name="stagger" appear>
-                  <div
-                      v-for="(entry, index) in selectedDateEntries"
-                      :key="entry.id"
-                      :style="{ '--delay': index * 0.1 + 's' }"
-                      @click="viewEntry(entry)"
-                      class="card entry-card stagger-item"
-                      :class="`stagger-delay-${Math.min(index, 9)}`"
-                  >
+                  <div v-for="(entry, index) in selectedDateEntries" :key="entry.id" :style="{ '--delay': index * 0.1 + 's' }" @click="viewEntry(entry)" class="card entry-card stagger-item" :class="`stagger-delay-${Math.min(index, 9)}`">
                     <h4 v-if="entry.title" class="entry-title">{{ entry.title }}</h4>
                     <p class="entry-preview">{{ entry.content }}</p>
                   </div>
@@ -462,21 +394,11 @@
 
           <div class="write-content">
             <div class="card">
-              <input
-                  v-model="currentEntry.title"
-                  placeholder="Entry title (optional)"
-                  class="input-field"
-                  @input="autoSave"
-              />
+              <input v-model="currentEntry.title" placeholder="Entry title (optional)" class="input-field" @input="autoSave" />
             </div>
 
             <div class="card">
-              <textarea
-                  v-model="currentEntry.content"
-                  placeholder="What's on your mind today? Reflect on a moment that made you smile..."
-                  class="textarea-field"
-                  @input="autoSave"
-              ></textarea>
+              <textarea v-model="currentEntry.content" placeholder="What's on your mind today? Reflect on a moment that made you smile..." class="textarea-field" @input="autoSave"></textarea>
             </div>
 
             <div class="write-actions">
@@ -1200,6 +1122,50 @@ const loadBackupSettings = () => {
   if (saved) {
     backupSettings.value = { ...backupSettings.value, ...JSON.parse(saved) }
   }
+}
+
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const isSwipeGesture = ref(false)
+
+const handleTouchStart = (event: TouchEvent) => {
+  touchStartX.value = event.touches[0].clientX
+  touchStartY.value = event.touches[0].clientY
+  isSwipeGesture.value = false
+}
+
+const handleTouchMove = (event: TouchEvent) => {
+  if (!touchStartX.value) return
+
+  const touchEndX = event.touches[0].clientX
+  const touchEndY = event.touches[0].clientY
+  const deltaX = touchEndX - touchStartX.value
+  const deltaY = touchEndY - touchStartY.value
+
+  // Check if it's a horizontal swipe (more horizontal than vertical movement)
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+    isSwipeGesture.value = true
+  }
+}
+
+const handleTouchEnd = (event: TouchEvent) => {
+  if (!touchStartX.value || !isSwipeGesture.value) return
+
+  const touchEndX = event.changedTouches[0].clientX
+  const deltaX = touchEndX - touchStartX.value
+
+  // Swipe from left (deltaX > 100 means swipe right from left edge)
+  if (deltaX > 100 && touchStartX.value < 50) {
+    // Only navigate back from backup and calendar views
+    if (currentView.value === 'backup' || currentView.value === 'calendar') {
+      goHome()
+    }
+  }
+
+  // Reset values
+  touchStartX.value = 0
+  touchStartY.value = 0
+  isSwipeGesture.value = false
 }
 
 onMounted(() => {
