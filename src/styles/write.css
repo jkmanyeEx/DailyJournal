@@ -1,0 +1,34 @@
+/* Write View Styles */
+.write-view {
+  animation: slideIn 0.3s ease-out;
+}
+
+.write-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.write-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+/* Music Preview */
+.music-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(166, 139, 91, 0.1);
+  border-radius: 0.5rem;
+  color: var(--dawn-gold);
+  font-size: 0.875rem;
+}
+
+.music-text {
+  color: var(--text-secondary);
+}

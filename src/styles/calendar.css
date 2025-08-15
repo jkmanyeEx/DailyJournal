@@ -1,0 +1,200 @@
+/* Calendar View Styles */
+.calendar-view {
+    animation: slideIn 0.3s ease-out;
+}
+
+.month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+}
+
+.month-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--dawn-gold);
+    /* Added transition for month switching animation */
+    transition: all 0.3s ease;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.day-header {
+    text-align: center;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding: 0.5rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    /* Added transition for smooth month switching */
+    transition: all 0.3s ease;
+}
+
+.calendar-date {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 0.25rem;
+    min-height: 2rem;
+    min-width: 2rem;
+}
+
+.calendar-date:hover {
+    background-color: var(--bg-card);
+    transform: scale(1.05);
+}
+
+.calendar-date.has-entry {
+    background-color: rgba(166, 139, 91, 0.1);
+    border-color: var(--dawn-gold);
+    cursor: pointer;
+}
+
+.calendar-date.has-entry:hover {
+    background-color: rgba(166, 139, 91, 0.2);
+    transform: scale(1.1);
+}
+
+/* Enhanced today's date styling for better visibility */
+.calendar-date.is-today {
+    background-color: var(--dawn-gold) !important;
+    color: var(--bg-primary) !important;
+    font-weight: 700;
+    border: 2px solid var(--dawn-gold);
+    box-shadow: 0 0 0 2px rgba(166, 139, 91, 0.3);
+}
+
+/* Added selected date styling */
+.calendar-date.is-selected {
+    background-color: rgba(166, 139, 91, 0.3) !important;
+    border: 2px solid var(--dawn-gold) !important;
+    box-shadow: 0 0 0 1px rgba(166, 139, 91, 0.5);
+}
+
+.calendar-date.other-month {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.calendar-date.other-month:hover {
+    transform: none;
+    background-color: var(--bg-secondary);
+}
+
+/* Enhanced today's date number styling */
+.date-number {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.calendar-date.is-today .date-number {
+    color: var(--bg-primary) !important;
+    font-weight: 700 !important;
+    text-shadow: none;
+}
+
+.calendar-date.other-month .date-number {
+    color: var(--text-muted);
+}
+
+.calendar-date.has-entry .date-number {
+    color: var(--dawn-gold);
+    font-weight: 500;
+}
+
+/* Selected date number styling */
+.calendar-date.is-selected .date-number {
+    color: var(--dawn-gold);
+    font-weight: 600;
+}
+
+/* Ensure today's date overrides entry styling when both apply */
+.calendar-date.is-today.has-entry .date-number {
+    color: var(--bg-primary) !important;
+    font-weight: 700 !important;
+}
+
+.entry-dot {
+    width: 4px;
+    height: 4px;
+    background-color: var(--dawn-gold);
+    border-radius: 50%;
+    position: absolute;
+    bottom: 4px;
+}
+
+/* Hide entry dot for today's date since it's already highlighted */
+.calendar-date.is-today .entry-dot {
+    display: none;
+}
+
+.selected-entries {
+    margin-top: 2rem;
+}
+
+/* Added no entries message styling */
+.no-entries-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.no-entries-message p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Added month switching animation keyframes */
+@keyframes monthSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes monthSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+/* Animation classes for month transitions */
+.month-enter-active {
+    animation: monthSlideIn 0.3s ease-out;
+}
+
+.month-leave-active {
+    animation: monthSlideOut 0.3s ease-out;
+}

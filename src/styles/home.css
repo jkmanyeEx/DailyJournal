@@ -1,0 +1,173 @@
+/* Home View Styles */
+.home-view {
+  animation: slideIn 0.3s ease-out;
+}
+
+.welcome-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 300;
+  color: var(--dawn-gold);
+  margin-bottom: 0.5rem;
+  white-space: normal;
+}
+
+.welcome-date {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.entry-status {
+  color: var(--dawn-gold);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.entry-content {
+  margin-bottom: 1rem;
+}
+
+.entry-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  white-space: normal;
+}
+
+.entry-preview {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.empty-entry {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.empty-message {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.recent-section {
+  margin-top: 2rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--dawn-gold);
+  margin-bottom: 1rem;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.entry-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.entry-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--shadow);
+}
+
+.entry-meta {
+  margin-bottom: 0.5rem;
+}
+
+.entry-date {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Backup Reminder Dialog */
+.backup-reminder-dialog {
+  background-color: rgba(166, 139, 91, 0.1);
+  border: 1px solid rgba(166, 139, 91, 0.3);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  margin: 1rem 0 2rem 0;
+  backdrop-filter: blur(20px);
+  position: relative;
+}
+
+.backup-reminder-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+}
+
+.backup-reminder-text {
+  flex: 1;
+}
+
+.backup-reminder-title {
+  color: var(--dawn-gold);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.backup-reminder-message {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.backup-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.backup-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.backup-reminder-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.backup-export-btn {
+  background: linear-gradient(135deg, var(--dawn-gold), var(--accent));
+  color: var(--bg-primary);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.backup-export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(166, 139, 91, 0.3);
+}

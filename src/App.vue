@@ -1,484 +1,206 @@
 <template>
-  <!-- Main App -->
   <div class="app-container" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-wrapper">
-        <div class="header-content">
-          <!-- Fixed left container to always have consistent width -->
-          <div class="header-left">
-            <button v-if="currentView === 'home'" @click="showCalendar" class="back-button">
-              <Calendar class="icon-size" />
-            </button>
-          </div>
-
-          <h1 class="app-title">
-            Daily Journal
-          </h1>
-
-          <!-- Fixed right container to balance the header properly -->
-          <div class="header-right">
-            <!-- Added install button for PWA -->
-            <button v-if="showInstallButton && currentView === 'home'" @click="installPWA" class="install-button" title="Install App">
-              <Download class="icon-size" />
-            </button>
-            <button v-if="currentView === 'home'" @click="showBackupMenu" class="back-button" title="Backup & Settings">
-              <Archive class="icon-size" />
-            </button>
-            <Transition name="slide-up-reverse">
-              <div v-if="!isOnline" class="offline-indicator">
-                <div class="offline-dot"></div>
-              </div>
-            </Transition>
-          </div>
-        </div>
+    <!-- Loading Screen -->
+    <div v-if="isLoading" class="loading-screen">
+      <div class="loading-content">
+        <div class="coffee-icon">☕</div>
+        <h2 class="loading-title">Daily Journal</h2>
+        <p class="loading-subtitle">Loading your thoughts...</p>
+        <div class="loading-spinner"></div>
       </div>
-    </header>
+    </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <Transition name="slide-fade" mode="out-in">
-        <!-- Installation Guide View -->
-        <div v-if="currentView === 'install'" key="install" class="install-view">
-          <div class="view-header">
-            <button @click="goHome" class="back-button">
-              <ChevronLeft class="icon-large" />
-            </button>
-            <h2 class="view-title">Install App</h2>
-            <div class="header-spacer"></div>
-          </div>
+    <!-- Password Check Screen (shows after loading if password is set) -->
+    <div v-else-if="needsPasswordOnStartup" class="startup-password-screen">
+      <div class="startup-password-content">
+        <div class="coffee-icon">☕</div>
+        <h2 class="startup-password-title">Enter Password</h2>
+        <input
+            v-model="startupPasswordInput"
+            type="password"
+            placeholder="Enter your password"
+            class="startup-password-input"
+            @keyup.enter="verifyStartupPassword"
+        />
+        <button @click="verifyStartupPassword" class="startup-password-button">
+          Unlock Journal
+        </button>
+      </div>
+    </div>
 
-          <div class="install-content">
-            <div class="card">
-              <h3 class="card-section-title">Get the Best Experience</h3>
-              <p class="install-description">
-                Install Daily Journal as an app for offline access, faster loading, and a native mobile experience.
-              </p>
-            </div>
-
-            <!-- iOS Instructions -->
-            <div v-if="userOS === 'ios'" class="card">
-              <h3 class="card-section-title">📱 Install on iOS</h3>
-              <div class="install-steps">
-                <div class="install-step">
-                  <span class="step-number">1</span>
-                  <p>Tap the <strong>Share</strong> button at the bottom of Safari</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">2</span>
-                  <p>Scroll down and tap <strong>"Add to Home Screen"</strong></p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">3</span>
-                  <p>Tap <strong>"Add"</strong> to install the app</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">4</span>
-                  <p>Find the Daily Journal app on your home screen</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Android Instructions -->
-            <div v-if="userOS === 'android'" class="card">
-              <h3 class="card-section-title">🤖 Install on Android</h3>
-              <div class="install-steps">
-                <div class="install-step">
-                  <span class="step-number">1</span>
-                  <p>Tap the <strong>menu</strong> (⋮) in Chrome</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">2</span>
-                  <p>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">3</span>
-                  <p>Tap <strong>"Install"</strong> to confirm</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">4</span>
-                  <p>Launch from your app drawer or home screen</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Desktop Instructions -->
-            <div v-if="userOS === 'desktop'" class="card">
-              <h3 class="card-section-title">💻 Install on Desktop</h3>
-              <div class="install-steps">
-                <div class="install-step">
-                  <span class="step-number">1</span>
-                  <p>Look for the <strong>install icon</strong> (⊕) in your browser's address bar</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">2</span>
-                  <p>Click <strong>"Install"</strong> when prompted</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">3</span>
-                  <p>The app will open in its own window</p>
-                </div>
-                <div class="install-step">
-                  <span class="step-number">4</span>
-                  <p>Pin to taskbar for quick access</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3 class="card-section-title">✨ App Benefits</h3>
-              <div class="benefits-list">
-                <div class="benefit-item">📱 Native mobile experience</div>
-                <div class="benefit-item">⚡ Faster loading times</div>
-                <div class="benefit-item">🔒 Works completely offline</div>
-                <div class="benefit-item">🔔 Push notifications for backups</div>
-                <div class="benefit-item">💾 Secure local data storage</div>
-              </div>
-            </div>
-
-            <div class="install-actions">
-              <button @click="goHome" class="btn-primary full-width">
-                Continue in Browser
+    <!-- Main App (shows after loading and password check) -->
+    <div v-else>
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-wrapper">
+          <div class="header-content">
+            <div class="header-left">
+              <button v-if="currentView === 'home'" @click="showCalendar" class="back-button">
+                <Calendar class="icon-size" />
               </button>
+            </div>
+
+            <!-- Made Daily Journal text clickable to go home -->
+            <h1 class="app-title" @click="goHome">Daily Journal</h1>
+
+            <div class="header-right">
+              <button v-if="showInstallButton && currentView === 'home'" @click="installPWA" class="install-button" title="Install App">
+                <Download class="icon-size" />
+              </button>
+              <button v-if="currentView === 'home'" @click="showBackupMenu" class="back-button" title="Backup & Settings">
+                <Archive class="icon-size" />
+              </button>
+              <Transition name="slide-up-reverse">
+                <div v-if="!isOnline" class="offline-indicator">
+                  <div class="offline-dot"></div>
+                </div>
+              </Transition>
             </div>
           </div>
         </div>
+      </header>
 
-        <!-- Welcome Section -->
-        <div v-else-if="currentView === 'home'" key="home" class="home-view">
-          <!-- Landscape Orientation Warning -->
-          <div class="landscape-warning">
-            <div class="landscape-content">
-              <div class="rotate-icon">📱</div>
-              <h3>Please rotate your device</h3>
-              <p>Daily Journal works best in portrait mode</p>
-            </div>
-          </div>
+      <!-- Main Content -->
+      <main class="main-content">
+        <Transition name="slide-fade" mode="out-in">
+          <HomeView
+              v-if="currentView === 'home'"
+              key="home"
+              :entries="entries"
+              :todayEntry="todayEntry"
+              :recentEntries="recentEntries"
+              @new-entry="newEntry"
+              @view-entry="viewEntry"
+          />
 
-          <div v-if="showBackupReminder" class="backup-reminder-dialog">
-            <div class="backup-reminder-content">
-              <div class="backup-reminder-text">
-                <h4 class="backup-reminder-title">Backup Reminder</h4>
-                <p class="backup-reminder-message">
-                  It's been {{ daysSinceLastBackup }} days since your last backup.
-                  Consider exporting your entries to stay safe.
-                </p>
-              </div>
-              <button @click="dismissBackupReminder" class="backup-close-btn">×</button>
-            </div>
+          <WriteView
+              v-else-if="currentView === 'write'"
+              key="write"
+              :currentEntry="currentEntry"
+              :isEditing="isEditing"
+              @save="saveEntry"
+              @delete="deleteEntry"
+              @go-home="goHome"
+          />
+
+          <EntryView
+              v-else-if="currentView === 'view'"
+              key="view"
+              :selectedEntry="selectedEntry"
+              :currentMusicUrl="currentMusicUrl"
+              :isPlaying="isPlaying"
+              :albumCover="currentAlbumCover"
+              @edit="editEntry"
+              @delete="deleteEntry"
+              @go-home="goHome"
+              @play-music="playMusic"
+              @pause-music="pauseMusic"
+              @stop-music="stopMusic"
+              @toggle-music="toggleMusic"
+          />
+
+          <CalendarView
+              v-else-if="currentView === 'calendar'"
+              key="calendar"
+              :calendarDates="calendarDates"
+              :selectedDateEntries="selectedDateEntries"
+              :currentMonthYear="currentMonthYear"
+              :formatSelectedDate="formatSelectedDate"
+              :selectedDate="selectedDate"
+              @previous-month="previousMonth"
+              @next-month="nextMonth"
+              @select-date="selectDate"
+              @view-entry="viewEntry"
+              @go-home="goHome"
+          />
+
+          <BackupView
+              v-else-if="currentView === 'backup'"
+              key="backup"
+              :entries="entries"
+              :backupSettings="backupSettings"
+              :writingReminderSettings="writingReminderSettings"
+              :userPassword="userPassword"
+              :totalEntries="totalEntries"
+              :lastBackupDate="lastBackupDate"
+              :storageSize="storageSize"
+              @export-data="exportData"
+              @import-data="importData"
+              @update-backup-settings="updateBackupSettings"
+              @update-writing-settings="updateWritingSettings"
+              @update-user-password="updatePassword"
+              @go-home="goHome"
+          />
+
+          <PasswordView
+              v-else-if="currentView === 'password' || currentView === 'password-entry'"
+              key="password"
+              :passwordInput="passwordInput"
+              :currentView="currentView"
+              @verify-password="verifyPassword"
+              @go-home="goHome"
+              @update:passwordInput="passwordInput = $event"
+              @save-password="savePassword"
+          />
+        </Transition>
+      </main>
+
+      <!-- Floating Action Button -->
+      <Transition name="slide-up">
+        <button
+            v-if="currentView === 'home'"
+            @click="handleFloatingAction"
+            class="fab"
+        >
+          <Edit3 v-if="todayEntry" class="icon-size" />
+          <Plus v-else class="icon-size" />
+        </button>
+      </Transition>
+
+      <!-- Toast Notifications -->
+      <Transition name="slide-up">
+        <div v-if="toast.show" :class="['toast-bottom', toast.type]">
+          {{ toast.message }}
+        </div>
+      </Transition>
+
+      <!-- Backup Reminder -->
+      <Transition name="slide-up">
+        <div v-if="showBackupReminder" class="backup-reminder">
+          <div class="backup-reminder-content">
+            <h3 class="backup-reminder-title">Time to backup your thoughts</h3>
+            <p class="backup-reminder-message">It's been {{ backupSettings.reminderDays }} days since your last backup.</p>
             <div class="backup-reminder-actions">
-              <button @click="exportData" class="backup-export-btn">Export Now</button>
-            </div>
-          </div>
-
-          <div class="welcome-section">
-            <h2 class="welcome-title">Welcome to Your Daily Reflection</h2>
-            <p class="welcome-date">{{ getCurrentDateString() }}</p>
-          </div>
-
-          <!-- Today's Entry Card -->
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Today's Entry</h3>
-              <span v-if="todayEntry" class="entry-status">✓ Written</span>
-            </div>
-
-            <div v-if="todayEntry" class="entry-content">
-              <h4 v-if="todayEntry.title" class="entry-title">{{ todayEntry.title }}</h4>
-              <p class="entry-preview">{{ todayEntry.content }}</p>
-              <button @click="editTodayEntry" class="btn-secondary">
-                Edit Entry
+              <button @click="exportData" class="backup-reminder-button primary">Export Now</button>
+              <button @click="dismissBackupReminder" class="backup-reminder-button secondary">
+                <X class="icon-small" />
               </button>
-            </div>
-
-            <div v-else class="empty-entry">
-              <p class="empty-message">What are you grateful for today?</p>
-              <button @click="startWriting" class="btn-primary full-width">
-                Write Your Thoughts
-              </button>
-            </div>
-          </div>
-
-          <!-- Recent Entries -->
-          <div v-if="recentEntries.length > 0" class="recent-section">
-            <h3 class="section-title">Recent Entries</h3>
-            <div class="entries-list">
-              <TransitionGroup name="stagger" appear>
-                <div v-for="(entry, index) in recentEntries" :key="entry.id" :style="{ '--delay': index * 0.1 + 's' }" @click="viewEntry(entry)" class="card entry-card stagger-item" :class="`stagger-delay-${Math.min(index, 9)}`">
-                  <div class="entry-meta">
-                    <span class="entry-date">{{ formatDate(entry.date) }}</span>
-                  </div>
-                  <h4 v-if="entry.title" class="entry-title">{{ entry.title }}</h4>
-                  <p class="entry-preview">{{ entry.content }}</p>
-                </div>
-              </TransitionGroup>
-            </div>
-          </div>
-        </div>
-
-        <!-- Backup Menu -->
-        <div v-else-if="currentView === 'backup'" key="backup" class="backup-view"
-             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-          <div class="view-header">
-            <button @click="goHome" class="back-button">
-              <ChevronLeft class="icon-large" />
-            </button>
-            <h2 class="view-title">Backup & Settings</h2>
-            <div class="header-spacer"></div>
-          </div>
-
-          <div class="backup-sections">
-            <!-- Backup Status -->
-            <div class="card">
-              <h3 class="card-section-title">Backup Status</h3>
-              <div class="status-list">
-                <div class="status-item">
-                  <span class="status-label">Total Entries:</span>
-                  <span class="status-value">{{ entries.length }}</span>
-                </div>
-                <div class="status-item">
-                  <span class="status-label">Last Backup:</span>
-                  <span class="status-value">{{ lastBackupDate || 'Never' }}</span>
-                </div>
-                <div class="status-item">
-                  <span class="status-label">Storage Used:</span>
-                  <span class="status-value">{{ storageSize }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Export/Import -->
-            <div class="card">
-              <h3 class="card-section-title">Export & Import</h3>
-              <div class="action-buttons">
-                <button @click="exportData" class="btn-primary full-width">
-                  <Download class="icon-size button-icon" />
-                  Export All Entries
-                </button>
-                <div class="file-input-wrapper">
-                  <input ref="fileInput" type="file" accept=".json" @change="importData" class="file-input" />
-                  <button class="btn-secondary full-width">
-                    <Upload class="icon-size button-icon" />
-                    Import Entries
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Auto-backup Settings -->
-            <div class="card">
-              <h3 class="card-section-title">Auto-backup Settings</h3>
-              <div class="settings-list">
-                <label class="setting-item">
-                  <span class="setting-label">Backup Reminders</span>
-                  <input v-model="backupSettings.reminders" type="checkbox" class="toggle-checkbox" />
-                </label>
-                <label class="setting-item">
-                  <span class="setting-label">Push Notifications</span>
-                  <input v-model="backupSettings.pushNotifications" type="checkbox" class="toggle-checkbox" @change="handlePushNotificationToggle" />
-                </label>
-                <div v-if="backupSettings.reminders" class="sub-settings">
-                  <label class="setting-item sub-setting">
-                    <span class="setting-label">Remind every:</span>
-                    <select v-model="backupSettings.reminderDays" class="setting-select">
-                      <option value="7">7 days</option>
-                      <option value="14">14 days</option>
-                      <option value="30">30 days</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Daily Writing Reminders -->
-            <div class="card">
-              <h3 class="card-section-title">Daily Writing Reminders</h3>
-              <div class="settings-list">
-                <label class="setting-item">
-                  <span class="setting-label">Daily Reminders</span>
-                  <input v-model="writingReminderSettings.enabled" type="checkbox" class="toggle-checkbox" @change="saveWritingReminderSettings" />
-                </label>
-                <label class="setting-item">
-                  <span class="setting-label">Push Notifications</span>
-                  <input v-model="writingReminderSettings.pushNotifications" type="checkbox" class="toggle-checkbox" @change="handleWritingPushNotificationToggle" />
-                </label>
-                <div v-if="writingReminderSettings.enabled" class="sub-settings">
-                  <label class="setting-item sub-setting">
-                    <span class="setting-label">Reminder time:</span>
-                    <input v-model="writingReminderSettings.time" type="time" class="setting-time-input" @change="saveWritingReminderSettings" />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Data Recovery -->
-            <div class="card">
-              <h3 class="card-section-title">Data Recovery</h3>
-              <div class="action-buttons">
-                <button @click="validateData" class="btn-secondary full-width">
-                  <Shield class="icon-size button-icon" />
-                  Validate Data Integrity
-                </button>
-                <button @click="recoverFromIndexedDB" class="btn-secondary full-width">
-                  <RefreshCw class="icon-size button-icon" />
-                  Recover from Backup Storage
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Calendar View -->
-        <div v-else-if="currentView === 'calendar'" key="calendar" class="calendar-view"
-             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-          <div class="view-header">
-            <button @click="goHome" class="back-button">
-              <ChevronLeft class="icon-large" />
-            </button>
-            <h2 class="view-title">Browse Entries</h2>
-            <div class="header-spacer"></div>
-          </div>
-
-          <!-- Month Navigation -->
-          <div class="month-nav">
-            <button @click="previousMonth" class="back-button">
-              <ChevronLeft class="icon-size" />
-            </button>
-            <h3 class="month-title">{{ currentMonthYear }}</h3>
-            <button @click="nextMonth" class="back-button">
-              <ChevronRight class="icon-size" />
-            </button>
-          </div>
-
-          <!-- Calendar Grid -->
-          <div class="card">
-            <div class="calendar-header">
-              <div v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day" class="day-header">
-                {{ day }}
-              </div>
-            </div>
-
-            <div class="calendar-grid">
-              <div v-for="date in calendarDates" :key="date.key" class="calendar-date" :class="{'other-month': !date.isCurrentMonth, 'has-entry': date.hasEntry, 'is-today': date.isToday}" @click="date.hasEntry && selectDate(date.date)">
-                <span class="date-number">{{ date.day }}</span>
-                <div v-if="date.hasEntry" class="entry-dot"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Selected Date Entries -->
-          <Transition name="slide-up">
-            <div v-if="selectedDateEntries.length > 0" class="selected-entries">
-              <h3 class="section-title">{{ formatSelectedDate }}</h3>
-              <div class="entries-list">
-                <TransitionGroup name="stagger" appear>
-                  <div v-for="(entry, index) in selectedDateEntries" :key="entry.id" :style="{ '--delay': index * 0.1 + 's' }" @click="viewEntry(entry)" class="card entry-card stagger-item" :class="`stagger-delay-${Math.min(index, 9)}`">
-                    <h4 v-if="entry.title" class="entry-title">{{ entry.title }}</h4>
-                    <p class="entry-preview">{{ entry.content }}</p>
-                  </div>
-                </TransitionGroup>
-              </div>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- Write View -->
-        <div v-else-if="currentView === 'write'" key="write" class="write-view"
-             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-          <div class="view-header">
-            <button @click="goHome" class="back-button">
-              <ChevronLeft class="icon-large" />
-            </button>
-            <h2 class="view-title">
-              {{ isEditing ? 'Edit Entry' : 'New Entry' }}
-            </h2>
-            <div class="header-spacer"></div>
-          </div>
-
-          <div class="write-content">
-            <div class="card">
-              <input v-model="currentEntry.title" placeholder="Entry title (optional)" class="input-field" @input="autoSave" />
-            </div>
-
-            <div class="card">
-              <textarea v-model="currentEntry.content" placeholder="What's on your mind today? Reflect on a moment that made you smile..." class="textarea-field" @input="autoSave"></textarea>
-            </div>
-
-            <div class="write-actions">
-              <button @click="saveEntry" class="btn-primary flex-grow">
-                <Save class="icon-size button-icon" />
-                Save Entry
-              </button>
-              <button v-if="isEditing" @click="deleteEntry" class="btn-secondary">
-                <Trash2 class="icon-size" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Entry View -->
-        <div v-else-if="currentView === 'view'" key="view" class="view-entry"
-             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-          <div class="view-header">
-            <button @click="goHome" class="back-button">
-              <ChevronLeft class="icon-large" />
-            </button>
-            <h2 class="view-title">Entry</h2>
-            <button @click="editEntry" class="edit-button">
-              <Edit3 class="icon-size" />
-            </button>
-          </div>
-
-          <div v-if="selectedEntry" class="entry-display">
-            <div class="card">
-              <div class="entry-header">
-                <span class="entry-date">{{ formatDate(selectedEntry.date) }}</span>
-              </div>
-              <h3 v-if="selectedEntry.title" class="display-title">{{ selectedEntry.title }}</h3>
-              <p class="display-content">{{ selectedEntry.content }}</p>
             </div>
           </div>
         </div>
       </Transition>
-    </main>
-
-    <!-- Floating Action Button -->
-    <button v-if="currentView !== 'backup' && currentView !== 'install'" @click="handlePlusClick" class="fab">
-      <Edit3 v-if="todayEntry" class="icon-large" />
-      <Plus v-else class="icon-large" />
-    </button>
-
-    <!-- Toast Notifications -->
-    <Transition name="toast">
-      <div v-show="toast.show" class="toast-bottom" :class="toast.type">
-        {{ toast.message }}
-      </div>
-    </Transition>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import {
-  ChevronLeft,
-  ChevronRight,
-  Save,
-  Edit3,
-  Trash2,
-  Plus,
-  Calendar,
-  Archive,
-  Download,
-  Upload,
-  Shield,
-  RefreshCw
-} from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Calendar, Archive, Download, Edit3, Plus, X, Play, Pause, Square } from 'lucide-vue-next'
+
+// Import components
+import HomeView from './components/HomeView.vue'
+import WriteView from './components/WriteView.vue'
+import EntryView from './components/EntryView.vue'
+import CalendarView from './components/CalendarView.vue'
+import BackupView from './components/BackupView.vue'
+import PasswordView from './components/PasswordView.vue'
 
 interface JournalEntry {
   id: string
   date: string
   title?: string
   content: string
+  musicUrl?: string
   createdAt: number
 }
 
@@ -492,11 +214,21 @@ interface BackupSettings {
 
 interface WritingReminderSettings {
   enabled: boolean
-  time: string // Format: "HH:MM"
+  time: string
   pushNotifications: boolean
 }
 
-const currentView = ref<'home' | 'write' | 'view' | 'calendar' | 'backup' | 'install'>('home')
+interface CalendarDate {
+  key: string
+  date: Date
+  day: number
+  isCurrentMonth: boolean
+  hasEntry: boolean
+  isToday: boolean
+}
+
+// State
+const currentView = ref<'home' | 'write' | 'view' | 'calendar' | 'backup' | 'password' | 'password-entry'>('home')
 const entries = ref<JournalEntry[]>([])
 const currentEntry = ref<Partial<JournalEntry>>({})
 const selectedEntry = ref<JournalEntry | null>(null)
@@ -504,25 +236,44 @@ const isEditing = ref(false)
 const toast = ref<{ show: boolean, message: string, type: string }>({ show: false, message: '', type: 'toast-error' })
 const calendarDate = ref(new Date())
 const selectedDate = ref<Date | null>(null)
-const fileInput = ref<HTMLInputElement>()
-
 const isOnline = ref(navigator.onLine)
-const showOfflineToast = ref(false)
-
 const backupSettings = ref<BackupSettings>({
   reminders: true,
   reminderDays: 14,
   pushNotifications: false
 })
-
 const writingReminderSettings = ref<WritingReminderSettings>({
-  enabled: true,
-  time: "20:00", // Default to 8 PM
+  enabled: false,
+  time: "20:00",
   pushNotifications: false
 })
-
 const showBackupReminder = ref(false)
+const passwordInput = ref('')
+const userPassword = ref(localStorage.getItem('userPassword') || '')
+const showInstallButton = ref(false)
+const currentMusicUrl = ref('')
+const isPlaying = ref(false)
+const pendingAction = ref<{ type: 'new-entry' | 'view-entry' | 'edit-entry', entry?: JournalEntry } | null>(null)
+const currentAudio = ref<HTMLAudioElement | null>(null)
+const isLoading = ref(true)
+const needsPasswordOnStartup = ref(false)
+const startupPasswordInput = ref('')
+const currentAlbumCover = ref('')
+const currentMusicTitle = ref('')
+const currentMusicArtist = ref('')
+const handleAudioLoadStart = () => {
+  console.log('[v0] Audio loading started')
+  // Don't change isPlaying state during loading
+}
+const handleAudioCanPlay = () => {
+  console.log('[v0] Audio can play')
+  // Ensure playing state is correct when audio is ready
+  if (currentAudio.value && !currentAudio.value.paused) {
+    isPlaying.value = true
+  }
+}
 
+// Computed
 const todayEntry = computed(() => {
   const today = new Date().toDateString()
   return entries.value.find(entry => new Date(entry.date).toDateString() === today)
@@ -555,55 +306,57 @@ const formatSelectedDate = computed(() => {
 const selectedDateEntries = computed(() => {
   if (!selectedDate.value) return []
   const dateString = selectedDate.value.toDateString()
-  return entries.value.filter(entry =>
-      new Date(entry.date).toDateString() === dateString
-  ).sort((a, b) => b.createdAt - a.createdAt)
+  return entries.value.filter(entry => new Date(entry.date).toDateString() === dateString)
 })
 
 const calendarDates = computed(() => {
   const year = calendarDate.value.getFullYear()
   const month = calendarDate.value.getMonth()
+  const today = new Date()
 
+  // Get first day of month and how many days to show from previous month
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
   const startDate = new Date(firstDay)
   startDate.setDate(startDate.getDate() - firstDay.getDay())
 
-  const dates = []
-  const today = new Date().toDateString()
+  const dates: CalendarDate[] = []
+  const current = new Date(startDate)
 
+  // Generate 42 days (6 weeks) for calendar grid
   for (let i = 0; i < 42; i++) {
-    const currentDate = new Date(startDate)
-    currentDate.setDate(startDate.getDate() + i)
-
-    const dateString = currentDate.toDateString()
-    const hasEntry = entries.value.some(entry =>
-        new Date(entry.date).toDateString() === dateString
-    )
+    const dateString = current.toDateString()
+    const hasEntry = entries.value.some(entry => new Date(entry.date).toDateString() === dateString)
+    const isCurrentMonth = current.getMonth() === month
+    const isToday = current.toDateString() === today.toDateString()
 
     dates.push({
-      key: `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`,
-      date: new Date(currentDate),
-      day: currentDate.getDate(),
-      isCurrentMonth: currentDate.getMonth() === month,
+      key: current.toISOString(),
+      date: new Date(current),
+      day: current.getDate(),
+      isCurrentMonth,
       hasEntry,
-      isToday: dateString === today
+      isToday
     })
+
+    current.setDate(current.getDate() + 1)
   }
 
   return dates
 })
 
-const daysSinceLastBackup = computed(() => {
-  if (!backupSettings.value.lastBackupDate) return 999
-  const lastBackup = new Date(backupSettings.value.lastBackupDate)
-  const now = new Date()
-  return Math.floor((now.getTime() - lastBackup.getTime()) / (1000 * 60 * 60 * 24))
-})
+const totalEntries = computed(() => entries.value.length)
 
 const lastBackupDate = computed(() => {
-  if (!backupSettings.value.lastBackupDate) return null
-  return new Date(backupSettings.value.lastBackupDate).toLocaleDateString()
+  const installDate = localStorage.getItem('installDate')
+  const backupDate = backupSettings.value.lastBackupDate
+
+  if (backupDate) {
+    return new Date(backupDate).toLocaleDateString()
+  } else if (installDate) {
+    return new Date(installDate).toLocaleDateString()
+  }
+  return 'Never'
 })
 
 const storageSize = computed(() => {
@@ -614,50 +367,54 @@ const storageSize = computed(() => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 })
 
-const getCurrentDateString = () => {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+// Methods - keeping only essential navigation and core functionality
+const goHome = () => {
+  currentView.value = 'home'
+  selectedDate.value = null
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
+const showCalendar = () => {
+  currentView.value = 'calendar'
 }
 
-const startWriting = () => {
+const showBackupMenu = () => {
+  currentView.value = 'backup'
+}
+
+const newEntry = () => {
   currentEntry.value = {
+    date: new Date().toISOString(),
     content: '',
     title: '',
-    date: new Date().toISOString(),
-    id: Date.now().toString()
+    musicUrl: ''
   }
   isEditing.value = false
   currentView.value = 'write'
 }
 
-const handlePlusClick = () => {
-  if (todayEntry.value) {
-    currentEntry.value = { ...todayEntry.value }
-    isEditing.value = true
-    currentView.value = 'write'
-  } else {
-    startWriting()
-  }
-}
+const viewEntry = (entry: JournalEntry) => {
+  selectedEntry.value = entry
 
-const editTodayEntry = () => {
-  if (todayEntry.value) {
-    currentEntry.value = { ...todayEntry.value }
-    isEditing.value = true
-    currentView.value = 'write'
+  // Only change music if entry has different music URL or no music is playing
+  if (entry.musicUrl && entry.musicUrl !== currentMusicUrl.value) {
+    // Stop current music first if it's different
+    if (currentMusicUrl.value && currentMusicUrl.value !== entry.musicUrl) {
+      stopMusic()
+    }
+
+    // Set new music URL and load metadata
+    currentMusicUrl.value = entry.musicUrl
+
+    if (entry.musicUrl.includes('youtube.com') || entry.musicUrl.includes('youtu.be')) {
+      fetchAlbumCover(entry.musicUrl)
+      fetchMusicMetadata(entry.musicUrl)
+    }
+  } else if (!entry.musicUrl && currentMusicUrl.value) {
+    // Entry has no music but music is playing - keep it playing
+    console.log('[v0] Entry has no music, keeping current music playing')
   }
+
+  currentView.value = 'view'
 }
 
 const editEntry = () => {
@@ -668,180 +425,179 @@ const editEntry = () => {
   }
 }
 
-const viewEntry = (entry: JournalEntry) => {
-  selectedEntry.value = entry
-  currentView.value = 'view'
+const handleFloatingAction = () => {
+  if (todayEntry.value) {
+    viewEntry(todayEntry.value)
+  } else {
+    newEntry()
+  }
 }
 
-const saveEntry = () => {
-  if (!currentEntry.value.content?.trim()) {
-    showToast('Please write something first!', 'toast-error')
+// Essential methods that need to stay in App.vue
+const saveEntry = (entry: JournalEntry) => {
+  if (!entry.content?.trim()) {
+    showToast('Please write something before saving.')
     return
   }
 
-  const entry: JournalEntry = {
-    id: currentEntry.value.id || Date.now().toString(),
-    date: currentEntry.value.date || new Date().toISOString(),
-    title: currentEntry.value.title?.trim() || undefined,
-    content: currentEntry.value.content,
-    createdAt: Date.now()
+  const entryToSave: JournalEntry = {
+    id: entry.id || generateId(),
+    date: entry.date || new Date().toISOString(),
+    title: entry.title || '',
+    content: entry.content,
+    musicUrl: entry.musicUrl || '',
+    createdAt: entry.createdAt || Date.now()
   }
 
-  if (isEditing.value) {
-    const index = entries.value.findIndex(e => e.id === entry.id)
-    if (index !== -1) {
-      entries.value[index] = entry
-    }
+  const existingIndex = entries.value.findIndex(e => e.id === entryToSave.id)
+
+  if (existingIndex >= 0) {
+    entries.value[existingIndex] = entryToSave
+    showToast('Entry updated successfully.')
   } else {
-    entries.value.push(entry)
+    entries.value.push(entryToSave)
+    showToast('Entry saved successfully.')
   }
 
-  saveToLocalStorage()
-  showToast('Entry saved!', 'toast-success')
+  // Save to localStorage
+  localStorage.setItem('journal-entries', JSON.stringify(entries.value))
+
+  // Auto-backup to IndexedDB
+  saveToIndexedDB(entries.value)
+
   goHome()
 }
 
-const deleteEntry = () => {
-  if (currentEntry.value.id) {
-    entries.value = entries.value.filter(e => e.id !== currentEntry.value.id)
-    saveToLocalStorage()
-    showToast('Entry deleted', 'toast-success')
+const deleteEntry = (id: string) => {
+  const index = entries.value.findIndex(entry => entry.id === id)
+  if (index >= 0) {
+    entries.value.splice(index, 1)
+    localStorage.setItem('journal-entries', JSON.stringify(entries.value))
+    saveToIndexedDB(entries.value)
+    showToast('Entry deleted successfully.')
     goHome()
   }
 }
 
-const goHome = () => {
-  currentView.value = 'home'
-  currentEntry.value = {}
-  selectedEntry.value = null
-  selectedDate.value = null
-  isEditing.value = false
+const previousMonth = () => {
+  calendarDate.value = new Date(calendarDate.value.getFullYear(), calendarDate.value.getMonth() - 1)
 }
 
-const autoSave = () => {
-  if (currentEntry.value.content || currentEntry.value.title) {
-    localStorage.setItem('journal-draft', JSON.stringify(currentEntry.value))
+const nextMonth = () => {
+  calendarDate.value = new Date(calendarDate.value.getFullYear(), calendarDate.value.getMonth() + 1)
+}
+
+const selectDate = (date: Date) => {
+  selectedDate.value = date
+}
+
+const exportData = () => {
+  // Implementation
+}
+
+const importData = (event: Event) => {
+  // Implementation
+}
+
+const updateBackupSettings = (settings: BackupSettings) => {
+  backupSettings.value = settings
+}
+
+const updateWritingSettings = (settings: WritingReminderSettings) => {
+  writingReminderSettings.value = settings
+}
+
+const updatePassword = (password: string) => {
+  userPassword.value = password
+  localStorage.setItem('userPassword', userPassword.value)
+  showToast('Password set successfully.')
+  currentView.value = 'backup'
+}
+
+// Updated savePassword method
+const savePassword = () => {
+  const trimmedPassword = passwordInput.value.trim()
+
+  if (trimmedPassword) {
+    userPassword.value = trimmedPassword
+    localStorage.setItem('userPassword', userPassword.value)
+    showToast('Password set successfully.')
+    currentView.value = 'backup'
+  } else {
+    userPassword.value = ''
+    localStorage.removeItem('userPassword')
+    showToast('Password protection disabled.')
+    currentView.value = 'backup'
+  }
+  passwordInput.value = ''
+}
+
+// Updated executePendingAction method
+const executePendingAction = () => {
+  if (!pendingAction.value) {
+    currentView.value = 'home'
+    return
+  }
+
+  const action = pendingAction.value
+  pendingAction.value = null
+
+  switch (action.type) {
+    case 'new-entry':
+      currentEntry.value = {
+        date: new Date().toISOString(),
+        content: '',
+        title: '',
+        musicUrl: ''
+      }
+      isEditing.value = false
+      currentView.value = 'write'
+      break
+
+    case 'view-entry':
+      if (action.entry) {
+        selectedEntry.value = action.entry
+        currentMusicUrl.value = action.entry.musicUrl || ''
+        currentView.value = 'view'
+      }
+      break
+
+    case 'edit-entry':
+      if (action.entry) {
+        currentEntry.value = { ...action.entry }
+        isEditing.value = true
+        currentView.value = 'write'
+      }
+      break
+
+    default:
+      currentView.value = 'home'
   }
 }
 
-const showToast = (message: string, type: string) => {
-  toast.value.message = message
-  toast.value.type = type
-  toast.value.show = true
+// Helper methods for functionality
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  let formattedMessage = message
+  if (!message.endsWith('.') && !message.endsWith('!') && !message.endsWith('?')) {
+    formattedMessage = message + '.'
+  }
+
+  toast.value = {
+    show: true,
+    message: formattedMessage,
+    type: type === 'success' ? 'toast-success' : 'toast-error'
+  }
+
   setTimeout(() => {
     toast.value.show = false
   }, 3000)
 }
 
-const saveToLocalStorage = () => {
-  localStorage.setItem('journal-entries', JSON.stringify(entries.value))
-  saveToIndexedDB()
-}
-
-const loadEntries = () => {
-  const saved = localStorage.getItem('journal-entries')
-  if (saved) {
-    entries.value = JSON.parse(saved)
-  }
-
-  const draft = localStorage.getItem('journal-draft')
-  if (draft && currentView.value === 'write') {
-    const draftEntry = JSON.parse(draft)
-    if (!draftEntry.id || !entries.value.find(e => e.id === draftEntry.id)) {
-      currentEntry.value = draftEntry
-    }
-  }
-}
-
-const showBackupMenu = () => {
-  currentView.value = 'backup'
-}
-
-const exportData = () => {
-  const data = {
-    entries: entries.value,
-    exportDate: new Date().toISOString(),
-    version: '1.0'
-  }
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `journal-backup-${new Date().toISOString().split('T')[0]}.json`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-
-  backupSettings.value.lastBackupDate = new Date().toISOString()
-  saveBackupSettings()
-  showToast('Backup exported successfully!', 'toast-success')
-}
-
-const importData = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target?.result as string)
-
-      if (!data.entries || !Array.isArray(data.entries)) {
-        throw new Error('Invalid backup file format')
-      }
-
-      const validEntries = data.entries.filter((entry: any) =>
-          entry.id && entry.date && entry.content && typeof entry.createdAt === 'number'
-      )
-
-      if (validEntries.length === 0) {
-        throw new Error('No valid entries found in backup')
-      }
-
-      const existingIds = new Set(entries.value.map(e => e.id))
-      const newEntries = validEntries.filter((entry: JournalEntry) => !existingIds.has(entry.id))
-
-      entries.value = [...entries.value, ...newEntries].sort((a, b) => b.createdAt - a.createdAt)
-
-      saveToLocalStorage()
-      saveToIndexedDB()
-      showToast(`Imported ${newEntries.length} new entries!`, 'toast-success')
-
-    } catch (error) {
-      showToast('Failed to import backup file. Please check the file format.', 'toast-error')
-      console.error('Import error:', error)
-    }
-  }
-  reader.readAsText(file)
-
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-}
-
-const validateData = () => {
-  let issues = 0
-  const validatedEntries = entries.value.filter(entry => {
-    if (!entry.id || !entry.date || !entry.content || typeof entry.createdAt !== 'number') {
-      issues++
-      return false
-    }
-    return true
-  })
-
-  if (issues > 0) {
-    entries.value = validatedEntries
-    saveToLocalStorage()
-    saveToIndexedDB()
-    showToast(`Fixed ${issues} corrupted entries`, 'toast-success')
-  } else {
-    showToast('All data is valid!', 'toast-success')
-  }
-}
-
-const saveToIndexedDB = async () => {
+const saveToIndexedDB = async (data: JournalEntry[]) => {
   try {
     const request = indexedDB.open('JournalBackup', 1)
 
@@ -857,334 +613,337 @@ const saveToIndexedDB = async () => {
       const transaction = db.transaction(['entries'], 'readwrite')
       const store = transaction.objectStore('entries')
 
+      // Clear existing data
       store.clear()
 
-      entries.value.forEach(entry => {
+      // Add all entries
+      data.forEach(entry => {
         store.add(entry)
       })
-
-      transaction.oncomplete = () => {
-        console.log('Data backed up to IndexedDB')
-      }
     }
   } catch (error) {
-    console.error('IndexedDB backup failed:', error)
+    console.error('Failed to backup to IndexedDB:', error)
   }
 }
 
-const recoverFromIndexedDB = async () => {
-  try {
-    const request = indexedDB.open('JournalBackup', 1)
+const verifyPassword = (type: string, inputPassword: string) => {
+  console.log('[v0] Verifying password:', { type, inputPassword, userPassword: userPassword.value })
 
-    request.onsuccess = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result
-      const transaction = db.transaction(['entries'], 'readonly')
-      const store = transaction.objectStore('entries')
-      const getAllRequest = store.getAll()
-
-      getAllRequest.onsuccess = () => {
-        const backupEntries = getAllRequest.result as JournalEntry[]
-
-        if (backupEntries.length === 0) {
-          showToast('No backup data found in IndexedDB', 'toast-error')
-          return
-        }
-
-        const existingIds = new Set(entries.value.map(e => e.id))
-        const newEntries = backupEntries.filter(entry => !existingIds.has(entry.id))
-
-        entries.value = [...entries.value, ...newEntries].sort((a, b) => b.createdAt - a.createdAt)
-
-        saveToLocalStorage()
-        showToast(`Recovered ${newEntries.length} entries from backup!`, 'toast-success')
-      }
+  if (!userPassword.value || userPassword.value.trim() === '') {
+    // No password set, allow access
+    if (type === 'settings') {
+      currentView.value = 'backup'
+      showToast('No password set - access granted.')
+    } else if (type === 'entries') {
+      executePendingAction()
+      showToast('No password set - entries unlocked.')
     }
+    passwordInput.value = ''
+    return
+  }
 
-    request.onerror = () => {
-      showToast('Failed to access backup storage', 'toast-error')
+  // Password is set, verify it
+  if (inputPassword && inputPassword.trim() === userPassword.value.trim()) {
+    if (type === 'settings') {
+      currentView.value = 'backup'
+      showToast('Access granted.')
+    } else if (type === 'entries') {
+      executePendingAction()
+      showToast('Entries unlocked.')
     }
-  } catch (error) {
-    showToast('Recovery failed. Please try importing a JSON backup.', 'toast-error')
-    console.error('IndexedDB recovery failed:', error)
-  }
-}
-
-const checkBackupReminder = async () => {
-  if (!backupSettings.value.reminders) return
-
-  const daysSinceBackup = daysSinceLastBackup.value
-  const daysSinceReminder = backupSettings.value.lastReminderDate
-      ? Math.floor((Date.now() - new Date(backupSettings.value.lastReminderDate).getTime()) / (1000 * 60 * 60 * 24))
-      : 999
-
-  if (daysSinceBackup >= backupSettings.value.reminderDays && daysSinceReminder >= 3) {
-    showBackupReminder.value = true
-
-    // Send push notification if enabled
-    if (backupSettings.value.pushNotifications && 'Notification' in window && Notification.permission === 'granted') {
-      new Notification('Journal Backup Reminder', {
-        body: `It's been ${daysSinceBackup} days since your last backup. Consider exporting your entries.`,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: 'backup-reminder'
-      })
-    }
-  }
-}
-
-const dismissBackupReminder = () => {
-  showBackupReminder.value = false
-  backupSettings.value.lastReminderDate = new Date().toISOString()
-  saveBackupSettings()
-}
-
-const saveBackupSettings = () => {
-  localStorage.setItem('journal-backup-settings', JSON.stringify(backupSettings.value))
-}
-
-const saveWritingReminderSettings = () => {
-  localStorage.setItem('journal-writing-reminder-settings', JSON.stringify(writingReminderSettings.value))
-  // Reschedule reminder with new settings
-  scheduleWritingReminder()
-}
-
-const loadWritingReminderSettings = () => {
-  const saved = localStorage.getItem('journal-writing-reminder-settings')
-  if (saved) {
-    writingReminderSettings.value = { ...writingReminderSettings.value, ...JSON.parse(saved) }
-  }
-}
-
-const handlePushNotificationToggle = async () => {
-  if (backupSettings.value.pushNotifications) {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        backupSettings.value.pushNotifications = false
-        showToast('Push notifications permission denied', 'toast-error')
-      } else {
-        showToast('Push notifications enabled', 'toast-success')
-      }
-    } else {
-      backupSettings.value.pushNotifications = false
-      showToast('Push notifications not supported', 'toast-error')
-    }
-  }
-  saveBackupSettings()
-}
-
-const handleWritingPushNotificationToggle = async () => {
-  if (writingReminderSettings.value.pushNotifications) {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        writingReminderSettings.value.pushNotifications = false
-        showToast('Push notifications permission denied', 'toast-error')
-      } else {
-        showToast('Writing reminder notifications enabled', 'toast-success')
-      }
-    } else {
-      writingReminderSettings.value.pushNotifications = false
-      showToast('Push notifications not supported', 'toast-error')
-    }
-  }
-  saveWritingReminderSettings()
-}
-
-const showCalendar = () => {
-  currentView.value = 'calendar'
-}
-
-const previousMonth = () => {
-  const newDate = new Date(calendarDate.value)
-  newDate.setMonth(newDate.getMonth() - 1)
-  calendarDate.value = newDate
-}
-
-const nextMonth = () => {
-  const newDate = new Date(calendarDate.value)
-  newDate.setMonth(newDate.getMonth() + 1)
-  calendarDate.value = newDate
-}
-
-const selectDate = (date: Date) => {
-  selectedDate.value = date
-  currentView.value = 'view'
-}
-
-const checkWritingReminder = () => {
-  if (!writingReminderSettings.value.enabled) return
-
-  const today = new Date().toDateString()
-  const hasWrittenToday = entries.value.some(entry =>
-      new Date(entry.date).toDateString() === today
-  )
-
-  if (!hasWrittenToday) {
-    const now = new Date()
-    const [hours, minutes] = writingReminderSettings.value.time.split(':').map(Number)
-    const reminderTime = new Date()
-    reminderTime.setHours(hours, minutes, 0, 0)
-
-    // Check if current time is past reminder time
-    if (now >= reminderTime) {
-      // Send push notification if enabled
-      if (writingReminderSettings.value.pushNotifications && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification('Daily Journal Reminder', {
-          body: "Don't forget to write in your journal today! Capture your thoughts and experiences.",
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
-          tag: 'writing-reminder'
-        })
-      }
-    }
-  }
-}
-
-const scheduleWritingReminder = () => {
-  if (!writingReminderSettings.value.enabled) return
-
-  const [hours, minutes] = writingReminderSettings.value.time.split(':').map(Number)
-  const now = new Date()
-  const reminderTime = new Date()
-  reminderTime.setHours(hours, minutes, 0, 0)
-
-  // If reminder time has passed today, schedule for tomorrow
-  if (now >= reminderTime) {
-    reminderTime.setDate(reminderTime.getDate() + 1)
-  }
-
-  const timeUntilReminder = reminderTime.getTime() - now.getTime()
-
-  setTimeout(() => {
-    checkWritingReminder()
-    // Schedule next day's reminder
-    scheduleWritingReminder()
-  }, timeUntilReminder)
-}
-
-const registerServiceWorker = async () => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js')
-      console.log('SW registered: ', registration)
-    } catch (registrationError) {
-      console.log('SW registration failed: ', registrationError)
-    }
-  }
-}
-
-const handleOnlineStatus = () => {
-  const wasOffline = !isOnline.value
-  isOnline.value = navigator.onLine
-
-  if (!navigator.onLine && !showOfflineToast.value) {
-    showOfflineToast.value = true
-    setTimeout(() => {
-      showOfflineToast.value = false
-    }, 5000)
-  } else if (navigator.onLine && wasOffline) {
-    showOfflineToast.value = false
-    showToast('Back online!', 'toast-success')
-  }
-}
-
-const showInstallButton = ref(false)
-let deferredPrompt: any = null
-
-const installPWA = async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-    if (outcome === 'accepted') {
-      showToast('App installed successfully!', 'toast-success')
-    }
-    deferredPrompt = null
-    showInstallButton.value = false
-  }
-}
-
-const userOS = ref<'ios' | 'android' | 'desktop'>('desktop')
-
-const detectUserOS = () => {
-  const userAgent = navigator.userAgent.toLowerCase()
-  if (/iphone|ipad|ipod/.test(userAgent)) {
-    userOS.value = 'ios'
-  } else if (/android/.test(userAgent)) {
-    userOS.value = 'android'
+    passwordInput.value = ''
   } else {
-    userOS.value = 'desktop'
+    showToast('Incorrect password.')
+    // Don't clear password input on error so user can try again
   }
 }
 
-const showInstallGuide = () => {
-  currentView.value = 'install'
-}
+const playMusic = async (url?: string) => {
+  if (url) {
+    currentMusicUrl.value = url
 
-const loadBackupSettings = () => {
-  const saved = localStorage.getItem('journal-backup-settings')
-  if (saved) {
-    backupSettings.value = { ...backupSettings.value, ...JSON.parse(saved) }
-  }
-}
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      await fetchAlbumCover(url)
+      await fetchMusicMetadata(url)
+      isPlaying.value = true
+      showToast('YouTube music loaded!')
+      return
+    }
 
-const touchStartX = ref(0)
-const touchStartY = ref(0)
-const isSwipeGesture = ref(false)
-const touchEndX = ref(0)
+    // Stop current audio if playing different URL
+    if (currentAudio.value && currentAudio.value.src !== url) {
+      currentAudio.value.pause()
+      currentAudio.value.currentTime = 0
+      removeAudioListeners()
+      currentAudio.value = null
+    }
 
-const handleTouchStart = (e: TouchEvent) => {
-  if (currentView.value === 'backup' || currentView.value === 'calendar' ||
-      currentView.value === 'write' || currentView.value === 'view') {
-    touchStartX.value = e.touches[0].clientX
-    touchStartY.value = e.touches[0].clientY
-  }
-}
+    // Create new audio only if needed
+    if (!currentAudio.value) {
+      try {
+        currentAudio.value = new Audio(url)
+        currentAudio.value.loop = true
+        currentAudio.value.volume = 0.7
+        currentAudio.value.preload = 'auto' // Ensure audio is preloaded
+        addAudioListeners()
 
-const handleTouchMove = (e: TouchEvent) => {
-  if (currentView.value === 'backup' || currentView.value === 'calendar' ||
-      currentView.value === 'write' || currentView.value === 'view') {
-    touchEndX.value = e.touches[0].clientX
-  }
-}
+        // Wait for audio to be ready before playing
+        await new Promise((resolve, reject) => {
+          if (currentAudio.value) {
+            currentAudio.value.addEventListener('canplaythrough', resolve, { once: true })
+            currentAudio.value.addEventListener('error', reject, { once: true })
+            currentAudio.value.load()
+          }
+        })
+      } catch (error) {
+        console.error('Audio creation failed:', error)
+        showToast('Audio format not supported!')
+        return
+      }
+    }
 
-const handleTouchEnd = () => {
-  if (currentView.value === 'backup' || currentView.value === 'calendar' ||
-      currentView.value === 'write' || currentView.value === 'view') {
-    const deltaX = touchEndX.value - touchStartX.value
-    const deltaY = Math.abs(touchStartY.value - touchEndX.value)
-
-    // Swipe from left edge to right (return to home)
-    if (touchStartX.value < 50 && deltaX > 100 && deltaY < 100) {
-      // Use existing slide-fade animation with right direction
-      isSwipeGesture.value = true
-      setTimeout(() => {
-        goHome()
-        isSwipeGesture.value = false
-      }, 150)
+    try {
+      await currentAudio.value.play()
+      isPlaying.value = true
+      showToast('Music started playing!')
+    } catch (error) {
+      console.error('Audio playback failed:', error)
+      showToast('Audio playback failed!')
+      isPlaying.value = false
+    }
+  } else if (currentAudio.value && currentAudio.value.paused) {
+    try {
+      await currentAudio.value.play()
+      isPlaying.value = true
+      showToast('Music resumed!')
+    } catch (error) {
+      console.error('Audio resume failed:', error)
+      showToast('Could not resume audio!')
     }
   }
 }
 
-onMounted(() => {
-  loadEntries()
-  loadBackupSettings()
-  loadWritingReminderSettings()
-  scheduleWritingReminder()
-  checkBackupReminder()
-  registerServiceWorker()
+const pauseMusic = () => {
+  if (currentMusicUrl.value.includes('youtube.com') || currentMusicUrl.value.includes('youtu.be')) {
+    isPlaying.value = false
+    showToast('YouTube music paused!')
+    return
+  }
 
-  detectUserOS()
+  if (currentAudio.value && !currentAudio.value.paused) {
+    currentAudio.value.pause()
+    isPlaying.value = false
+    showToast('Music paused!')
+  }
+}
 
-  // Listen for beforeinstallprompt event
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault()
-    deferredPrompt.value = e
-    showInstallButton.value = true
+const stopMusic = () => {
+  if (currentAudio.value) {
+    currentAudio.value.pause()
+    currentAudio.value.currentTime = 0
+    removeAudioListeners()
+    currentAudio.value = null
+  }
+
+  // Clear all music state
+  currentMusicUrl.value = ''
+  currentAlbumCover.value = ''
+  currentMusicTitle.value = ''
+  currentMusicArtist.value = ''
+  isPlaying.value = false
+  showToast('Music stopped!')
+}
+
+const toggleMusic = async () => {
+  console.log('[v0] Toggle music called, current state:', {
+    isPlaying: isPlaying.value,
+    hasAudio: !!currentAudio.value,
+    musicUrl: currentMusicUrl.value
   })
+
+  if (currentMusicUrl.value.includes('youtube.com') || currentMusicUrl.value.includes('youtu.be')) {
+    isPlaying.value = !isPlaying.value
+    showToast(isPlaying.value ? 'YouTube music playing!' : 'YouTube music paused!')
+    return
+  }
+
+  if (currentAudio.value) {
+    if (currentAudio.value.paused) {
+      try {
+        await currentAudio.value.play()
+        isPlaying.value = true
+        showToast('Music resumed!')
+      } catch (error) {
+        console.error('Play failed:', error)
+        showToast('Could not play audio!')
+      }
+    } else {
+      currentAudio.value.pause()
+      isPlaying.value = false
+      showToast('Music paused!')
+    }
+  } else if (currentMusicUrl.value) {
+    await playMusic(currentMusicUrl.value)
+  }
+}
+
+const fetchAlbumCover = async (url: string) => {
+  try {
+    const videoId = extractYouTubeVideoId(url)
+    if (videoId) {
+      currentAlbumCover.value = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    }
+  } catch (error) {
+    console.error('Failed to fetch album cover:', error)
+    currentAlbumCover.value = ''
+  }
+}
+
+const fetchMusicMetadata = async (url: string) => {
+  try {
+    let videoId = ''
+
+    if (url.includes('youtube.com/watch?v=')) {
+      videoId = url.split('v=')[1]?.split('&')[0]
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0]
+    }
+
+    if (!videoId) return
+
+    const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
+    const data = await response.json()
+
+    if (data.title) {
+      const title = data.title
+      if (title.includes(' - ')) {
+        const parts = title.split(' - ')
+        currentMusicArtist.value = parts[0].trim()
+        currentMusicTitle.value = parts[1].trim()
+      } else if (title.includes(' by ')) {
+        const parts = title.split(' by ')
+        currentMusicTitle.value = parts[0].trim()
+        currentMusicArtist.value = parts[1].trim()
+      } else {
+        currentMusicTitle.value = title
+        currentMusicArtist.value = data.author_name || ''
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch music metadata:', error)
+    currentMusicTitle.value = 'Background Music'
+    currentMusicArtist.value = ''
+  }
+}
+
+const extractYouTubeVideoId = (url: string): string | null => {
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+  const match = url.match(regex)
+  return match ? match[1] : null
+}
+
+const verifyStartupPassword = () => {
+  if (!userPassword.value || startupPasswordInput.value.trim() === userPassword.value.trim()) {
+    needsPasswordOnStartup.value = false
+    startupPasswordInput.value = ''
+    showToast('Welcome to your journal.')
+  } else {
+    showToast('Incorrect password.')
+  }
+}
+
+// Audio event handlers for proper state management
+const handleAudioEnded = () => {
+  console.log('[v0] Audio ended')
+  if (currentAudio.value && currentAudio.value.loop) {
+    // Ensure loop continues without interruption
+    currentAudio.value.currentTime = 0
+    currentAudio.value.play().catch(error => {
+      console.error('Auto-restart failed:', error)
+      isPlaying.value = false
+    })
+  } else {
+    isPlaying.value = false
+  }
+}
+
+const handleAudioPause = () => {
+  console.log('[v0] Audio paused')
+  // Only update state if pause wasn't caused by seeking or buffering
+  if (currentAudio.value && currentAudio.value.readyState >= 2) {
+    isPlaying.value = false
+  }
+}
+
+const handleAudioPlay = () => {
+  console.log('[v0] Audio playing')
+  isPlaying.value = true
+}
+
+const handleAudioError = (error: Event) => {
+  console.error('[v0] Audio error:', error)
+  isPlaying.value = false
+  showToast('Audio playback error occurred!')
+}
+
+// Proper audio event listener management
+const addAudioListeners = () => {
+  if (!currentAudio.value) return
+
+  currentAudio.value.addEventListener('ended', handleAudioEnded)
+  currentAudio.value.addEventListener('pause', handleAudioPause)
+  currentAudio.value.addEventListener('play', handleAudioPlay)
+  currentAudio.value.addEventListener('error', handleAudioError)
+  currentAudio.value.addEventListener('loadstart', handleAudioLoadStart)
+  currentAudio.value.addEventListener('canplay', handleAudioCanPlay)
+}
+
+const removeAudioListeners = () => {
+  if (!currentAudio.value) return
+
+  currentAudio.value.removeEventListener('ended', handleAudioEnded)
+  currentAudio.value.removeEventListener('pause', handleAudioPause)
+  currentAudio.value.removeEventListener('play', handleAudioPlay)
+  currentAudio.value.removeEventListener('error', handleAudioError)
+  currentAudio.value.removeEventListener('loadstart', handleAudioLoadStart)
+  currentAudio.value.removeEventListener('canplay', handleAudioCanPlay)
+}
+
+// Lifecycle
+onMounted(async () => {
+  if (!localStorage.getItem('installDate')) {
+    localStorage.setItem('installDate', new Date().toISOString())
+  }
+
+  // Load entries from localStorage
+  const savedEntries = localStorage.getItem('journal-entries')
+  if (savedEntries) {
+    entries.value = JSON.parse(savedEntries)
+  }
+
+  // Load backup settings
+  const savedBackupSettings = localStorage.getItem('backupSettings')
+  if (savedBackupSettings) {
+    backupSettings.value = { ...backupSettings.value, ...JSON.parse(savedBackupSettings) }
+  }
+
+  // Check if password is set
+  if (userPassword.value) {
+    needsPasswordOnStartup.value = true
+  }
+
+  // Simulate loading delay
+  setTimeout(() => {
+    isLoading.value = false
+  }, 2000)
+})
+
+onUnmounted(() => {
+  // Keep music playing but clean up listeners to prevent memory leaks
+  if (currentAudio.value) {
+    removeAudioListeners()
+    // Don't pause or destroy audio - let it continue playing across navigation
+    console.log('[v0] Component unmounted, music continues playing')
+  }
 })
 </script>
-
-<style scoped>
-/* Removed all duplicate styles that exist in style.css */
-</style>

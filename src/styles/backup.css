@@ -1,0 +1,169 @@
+/* Backup View Styles */
+.backup-view {
+    animation: slideIn 0.3s ease-out;
+}
+
+.backup-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.status-value {
+    color: var(--dawn-gold);
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.file-input-wrapper {
+    position: relative;
+}
+
+.file-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    cursor: pointer;
+}
+
+.setting-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    flex: 1;
+}
+
+.toggle-checkbox {
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    appearance: none;
+}
+
+.toggle-checkbox:checked {
+    background-color: var(--dawn-gold);
+    border-color: var(--dawn-gold);
+}
+
+.toggle-checkbox::after {
+    content: "";
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--text-primary);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.toggle-checkbox:checked::after {
+    transform: translateX(1.25rem);
+}
+
+.setting-select,
+.setting-time-input {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.sub-settings {
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border);
+}
+
+.sub-setting {
+    padding: 0.5rem 0;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Added password input wrapper styles for settings */
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    margin-right: 1rem;
+}
+
+.password-input-wrapper .input-field {
+    padding-right: 3rem;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+    color: var(--dawn-gold);
+}
+
+.setting-description {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+}

@@ -1,0 +1,408 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&display=swap");
+
+/* CSS Variables for Library Coffee Theme */
+:root {
+    --bg-primary: #0a0907;
+    --bg-secondary: #141210;
+    --bg-card: #1c1814;
+    --text-primary: #e8e2d8;
+    --text-secondary: #c4b59e;
+    --text-muted: #7a6f5e;
+    --dawn-gold: #a68b5b;
+    --accent: #8b7355;
+    --coffee-brown: #4a3426;
+    --border: #2d251a;
+    --shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Noto Sans KR", sans-serif;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    background-image: radial-gradient(circle at 20% 80%, rgba(166, 139, 91, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(74, 52, 38, 0.03) 0%, transparent 50%);
+    min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "Noto Sans KR", sans-serif;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* App Layout */
+.app-container {
+    min-height: 100vh;
+}
+
+.app-header {
+    background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(15, 13, 10, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-wrapper {
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-left,
+.header-right {
+    width: 80px;
+    display: flex;
+    align-items: center;
+}
+
+.header-left {
+    justify-content: flex-start;
+}
+
+.header-right {
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.app-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    flex: 1;
+    color: var(--dawn-gold);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.app-title:hover {
+    color: var(--accent);
+}
+
+.main-content {
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 6rem 1rem;
+}
+
+/* Common View Styles */
+.view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.view-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--dawn-gold);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.header-spacer {
+    width: 80px;
+}
+
+/* Cards */
+.card {
+    background-color: var(--bg-card);
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px var(--shadow);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--shadow);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.card-section-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--dawn-gold);
+    margin-bottom: 1rem;
+}
+
+/* Icons */
+.icon-size {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.icon-large {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* Offline Indicator */
+.offline-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.offline-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    background: linear-gradient(135deg, var(--dawn-gold), var(--accent));
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(166, 139, 91, 0.3);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 50;
+}
+
+.fab:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(166, 139, 91, 0.4);
+}
+
+/* Landscape Orientation Lock */
+@media (orientation: landscape) and (max-height: 500px) {
+    .app-container > *:not(.landscape-warning) {
+        display: none !important;
+    }
+
+    .landscape-warning {
+        display: flex !important;
+    }
+}
+
+.landscape-warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-primary);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.landscape-content {
+    text-align: center;
+    padding: 2rem;
+}
+
+.rotate-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.landscape-content h3 {
+    color: var(--dawn-gold);
+    margin-bottom: 0.5rem;
+    white-space: normal;
+}
+
+.landscape-content p {
+    color: var(--text-secondary);
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    text-align: center;
+    padding: 2rem;
+}
+
+.coffee-icon {
+    font-size: 5rem;
+    margin-bottom: 1rem;
+    animation: bounce 2s infinite;
+}
+
+.loading-title {
+    color: var(--dawn-gold);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    white-space: normal;
+}
+
+/* Added loading subtitle styling for "Loading your thoughts..." */
+.loading-subtitle {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+    white-space: normal;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top: 3px solid var(--dawn-gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+/* Startup Password Screen */
+.startup-password-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.startup-password-content {
+    text-align: center;
+    padding: 2rem;
+    max-width: 20rem;
+    width: 100%;
+}
+
+.startup-password-title {
+    color: var(--dawn-gold);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    white-space: normal;
+}
+
+.startup-password-input {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    font-size: 16px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.startup-password-input:focus {
+    outline: none;
+    border-color: var(--dawn-gold);
+    box-shadow: 0 0 0 3px rgba(166, 139, 91, 0.1);
+}
+
+.startup-password-button {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--dawn-gold), var(--accent));
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.startup-password-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(166, 139, 91, 0.3);
+}
+
+/* Loading animations */
+@keyframes bounce {
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
