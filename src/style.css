@@ -125,6 +125,8 @@ h6 {
     color: var(--dawn-gold);
     flex: 1;
     text-align: center;
+    margin: 0 auto;
+    display: block;
 }
 
 .header-spacer {
@@ -896,7 +898,7 @@ h6 {
 
 .slide-fade-leave-to {
     opacity: 0;
-    transform: translateX(-30px);
+    transform: translateX(100px); /* Changed from -30px to 100px for right slide */
 }
 
 .slide-up-enter-active,
@@ -994,20 +996,4 @@ h6 {
 }
 .stagger-delay-9 {
     animation-delay: 0.9s;
-}
-
-/* Added slide-out animation for swipe gesture */
-.slide-out-right {
-    animation: slideOutRight 0.2s ease-in-out forwards;
-}
-
-@keyframes slideOutRight {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(100%);
-    }
 }

@@ -1156,17 +1156,12 @@ const handleTouchEnd = () => {
 
     // Swipe from left edge to right (return to home)
     if (touchStartX.value < 50 && deltaX > 100 && deltaY < 100) {
-      // Add slide-out animation class
-      const currentElement = document.querySelector('.write-view, .view-entry, .backup-view, .calendar-view')
-      if (currentElement) {
-        currentElement.classList.add('slide-out-right')
-        setTimeout(() => {
-          goHome()
-          currentElement.classList.remove('slide-out-right')
-        }, 200)
-      } else {
+      // Use existing slide-fade animation with right direction
+      isSwipeGesture.value = true
+      setTimeout(() => {
         goHome()
-      }
+        isSwipeGesture.value = false
+      }, 150)
     }
   }
 }
