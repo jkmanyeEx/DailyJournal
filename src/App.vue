@@ -325,6 +325,42 @@
               </div>
             </div>
 
+            <!-- Daily Writing Reminders -->
+            <div class="card">
+              <h3 class="card-section-title">Daily Writing Reminders</h3>
+              <div class="settings-list">
+                <label class="setting-item">
+                  <span class="setting-label">Daily Reminders</span>
+                  <input
+                      v-model="writingReminderSettings.enabled"
+                      type="checkbox"
+                      class="toggle-checkbox"
+                      @change="saveWritingReminderSettings"
+                  />
+                </label>
+                <label class="setting-item">
+                  <span class="setting-label">Push Notifications</span>
+                  <input
+                      v-model="writingReminderSettings.pushNotifications"
+                      type="checkbox"
+                      class="toggle-checkbox"
+                      @change="handleWritingPushNotificationToggle"
+                  />
+                </label>
+                <div v-if="writingReminderSettings.enabled" class="sub-settings">
+                  <label class="setting-item sub-setting">
+                    <span class="setting-label">Reminder time:</span>
+                    <input
+                        v-model="writingReminderSettings.time"
+                        type="time"
+                        class="setting-time-input"
+                        @change="saveWritingReminderSettings"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <!-- Data Recovery -->
             <div class="card">
               <h3 class="card-section-title">Data Recovery</h3>
@@ -528,6 +564,12 @@ interface BackupSettings {
   lastReminderDate?: string
 }
 
+interface WritingReminderSettings {
+  enabled: boolean
+  time: string // Format: "HH:MM"
+  pushNotifications: boolean
+}
+
 const currentView = ref<'home' | 'write' | 'view' | 'calendar' | 'backup' | 'install'>('home')
 const entries = ref<JournalEntry[]>([])
 const currentEntry = ref<Partial<JournalEntry>>({})
@@ -546,6 +588,13 @@ const backupSettings = ref<BackupSettings>({
   reminderDays: 14,
   pushNotifications: false
 })
+
+const writingReminderSettings = ref<WritingReminderSettings>({
+  enabled: true,
+  time: "20:00", // Default to 8 PM
+  pushNotifications: false
+})
+
 const showBackupReminder = ref(false)
 
 const todayEntry = computed(() => {
@@ -763,7 +812,7 @@ const saveToLocalStorage = () => {
   saveToIndexedDB()
 }
 
-const loadFromLocalStorage = () => {
+const loadEntries = () => {
   const saved = localStorage.getItem('journal-entries')
   if (saved) {
     entries.value = JSON.parse(saved)
@@ -967,23 +1016,125 @@ const saveBackupSettings = () => {
   localStorage.setItem('journal-backup-settings', JSON.stringify(backupSettings.value))
 }
 
-const loadBackupSettings = () => {
-  const saved = localStorage.getItem('journal-backup-settings')
+const saveWritingReminderSettings = () => {
+  localStorage.setItem('journal-writing-reminder-settings', JSON.stringify(writingReminderSettings.value))
+  // Reschedule reminder with new settings
+  scheduleWritingReminder()
+}
+
+const loadWritingReminderSettings = () => {
+  const saved = localStorage.getItem('journal-writing-reminder-settings')
   if (saved) {
-    backupSettings.value = { ...backupSettings.value, ...JSON.parse(saved) }
+    writingReminderSettings.value = { ...writingReminderSettings.value, ...JSON.parse(saved) }
   }
-  if (!backupSettings.value.lastBackupDate) {
-    const installDate = localStorage.getItem('journal-install-date')
-    if (installDate) {
-      backupSettings.value.lastBackupDate = installDate
+}
+
+const handlePushNotificationToggle = async () => {
+  if (backupSettings.value.pushNotifications) {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        backupSettings.value.pushNotifications = false
+        showToast('Push notifications permission denied', 'toast-error')
+      } else {
+        showToast('Push notifications enabled', 'toast-success')
+      }
     } else {
-      // First time user - set install date to now
-      const now = new Date().toISOString()
-      localStorage.setItem('journal-install-date', now)
-      backupSettings.value.lastBackupDate = now
+      backupSettings.value.pushNotifications = false
+      showToast('Push notifications not supported', 'toast-error')
     }
-    saveBackupSettings()
   }
+  saveBackupSettings()
+}
+
+const handleWritingPushNotificationToggle = async () => {
+  if (writingReminderSettings.value.pushNotifications) {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        writingReminderSettings.value.pushNotifications = false
+        showToast('Push notifications permission denied', 'toast-error')
+      } else {
+        showToast('Writing reminder notifications enabled', 'toast-success')
+      }
+    } else {
+      writingReminderSettings.value.pushNotifications = false
+      showToast('Push notifications not supported', 'toast-error')
+    }
+  }
+  saveWritingReminderSettings()
+}
+
+const showCalendar = () => {
+  currentView.value = 'calendar'
+}
+
+const previousMonth = () => {
+  const newDate = new Date(calendarDate.value)
+  newDate.setMonth(newDate.getMonth() - 1)
+  calendarDate.value = newDate
+}
+
+const nextMonth = () => {
+  const newDate = new Date(calendarDate.value)
+  newDate.setMonth(newDate.getMonth() + 1)
+  calendarDate.value = newDate
+}
+
+const selectDate = (date: Date) => {
+  selectedDate.value = date
+  currentView.value = 'view'
+}
+
+const checkWritingReminder = () => {
+  if (!writingReminderSettings.value.enabled) return
+
+  const today = new Date().toDateString()
+  const hasWrittenToday = entries.value.some(entry =>
+      new Date(entry.date).toDateString() === today
+  )
+
+  if (!hasWrittenToday) {
+    const now = new Date()
+    const [hours, minutes] = writingReminderSettings.value.time.split(':').map(Number)
+    const reminderTime = new Date()
+    reminderTime.setHours(hours, minutes, 0, 0)
+
+    // Check if current time is past reminder time
+    if (now >= reminderTime) {
+      // Send push notification if enabled
+      if (writingReminderSettings.value.pushNotifications && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Daily Journal Reminder', {
+          body: "Don't forget to write in your journal today! Capture your thoughts and experiences.",
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: 'writing-reminder'
+        })
+      }
+    }
+  }
+}
+
+const scheduleWritingReminder = () => {
+  if (!writingReminderSettings.value.enabled) return
+
+  const [hours, minutes] = writingReminderSettings.value.time.split(':').map(Number)
+  const now = new Date()
+  const reminderTime = new Date()
+  reminderTime.setHours(hours, minutes, 0, 0)
+
+  // If reminder time has passed today, schedule for tomorrow
+  if (now >= reminderTime) {
+    reminderTime.setDate(reminderTime.getDate() + 1)
+  }
+
+  const timeUntilReminder = reminderTime.getTime() - now.getTime()
+
+  setTimeout(() => {
+    checkWritingReminder()
+    // Schedule next day's reminder
+    scheduleWritingReminder()
+  }, timeUntilReminder)
 }
 
 const registerServiceWorker = async () => {
@@ -1012,45 +1163,6 @@ const handleOnlineStatus = () => {
   }
 }
 
-const selectDate = (date: Date) => {
-  selectedDate.value = date
-  currentView.value = 'view'
-}
-
-const handlePushNotificationToggle = async () => {
-  if (backupSettings.value.pushNotifications) {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        backupSettings.value.pushNotifications = false
-        showToast('Push notifications permission denied', 'toast-error')
-      } else {
-        showToast('Push notifications enabled', 'toast-success')
-      }
-    } else {
-      backupSettings.value.pushNotifications = false
-      showToast('Push notifications not supported', 'toast-error')
-    }
-  }
-  saveBackupSettings()
-}
-
-const showCalendar = () => {
-  currentView.value = 'calendar'
-}
-
-const previousMonth = () => {
-  const newDate = new Date(calendarDate.value)
-  newDate.setMonth(newDate.getMonth() - 1)
-  calendarDate.value = newDate
-}
-
-const nextMonth = () => {
-  const newDate = new Date(calendarDate.value)
-  newDate.setMonth(newDate.getMonth() + 1)
-  calendarDate.value = newDate
-}
-
 const showInstallButton = ref(false)
 let deferredPrompt: any = null
 
@@ -1066,17 +1178,7 @@ const installPWA = async () => {
   }
 }
 
-// PWA detection and OS detection for installation guide
-const isPWA = ref(false)
 const userOS = ref<'ios' | 'android' | 'desktop'>('desktop')
-
-// Functions to detect PWA environment and show installation guide
-const detectPWAEnvironment = () => {
-  // Check if running as PWA
-  isPWA.value = window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true ||
-      document.referrer.includes('android-app://')
-}
 
 const detectUserOS = () => {
   const userAgent = navigator.userAgent.toLowerCase()
@@ -1093,24 +1195,29 @@ const showInstallGuide = () => {
   currentView.value = 'install'
 }
 
-onMounted(() => {
-  loadFromLocalStorage()
-  loadBackupSettings()
-  registerServiceWorker()
-  window.addEventListener('online', handleOnlineStatus)
-  window.addEventListener('offline', handleOnlineStatus)
+const loadBackupSettings = () => {
+  const saved = localStorage.getItem('journal-backup-settings')
+  if (saved) {
+    backupSettings.value = { ...backupSettings.value, ...JSON.parse(saved) }
+  }
+}
 
-  detectPWAEnvironment()
+onMounted(() => {
+  loadEntries()
+  loadBackupSettings()
+  loadWritingReminderSettings()
+  scheduleWritingReminder()
+  checkBackupReminder()
+  registerServiceWorker()
+
   detectUserOS()
 
-  // Show install guide if not in PWA environment
-  if (!isPWA.value) {
-    setTimeout(() => {
-      showInstallGuide()
-    }, 1000)
-  }
-
-  setTimeout(checkBackupReminder, 2000)
+  // Listen for beforeinstallprompt event
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt.value = e
+    showInstallButton.value = true
+  })
 })
 </script>
 
