@@ -36,9 +36,10 @@
             <Download class="icon-size button-icon" />
             Export All Entries
           </button>
+          <!-- Fixed file input wrapper to properly trigger import -->
           <div class="file-input-wrapper">
             <input ref="fileInput" type="file" accept=".json" @change="$emit('importData', $event)" class="file-input" />
-            <button class="btn-secondary full-width">
+            <button @click="$refs.fileInput.click()" class="btn-secondary full-width">
               <Upload class="icon-size button-icon" />
               Import Entries
             </button>

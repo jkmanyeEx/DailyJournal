@@ -126,6 +126,8 @@
               :storageSize="storageSize"
               @export-data="exportData"
               @import-data="importData"
+              @validate-data="validateData"
+              @recover-from-indexed-db="recoverFromIndexedDB"
               @update-backup-settings="updateBackupSettings"
               @update-writing-settings="updateWritingSettings"
               @update-user-password="updatePassword"
@@ -491,27 +493,169 @@ const selectDate = (date: Date) => {
   selectedDate.value = date
 }
 
+// Updated exportData method
 const exportData = () => {
-  // Implementation
+  try {
+    const dataToExport = {
+      entries: entries.value,
+      backupSettings: backupSettings.value,
+      writingReminderSettings: writingReminderSettings.value,
+      exportDate: new Date().toISOString(),
+      version: '1.0'
+    }
+
+    const dataStr = JSON.stringify(dataToExport, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(dataBlob)
+    link.download = `daily-journal-backup-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    // Update last backup date
+    backupSettings.value.lastBackupDate = new Date().toISOString()
+    localStorage.setItem('backupSettings', JSON.stringify(backupSettings.value))
+
+    showToast('Backup exported successfully!')
+  } catch (error) {
+    console.error('Export failed:', error)
+    showToast('Export failed. Please try again.', 'error')
+  }
 }
 
 const importData = (event: Event) => {
-  // Implementation
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (!file) {
+    showToast('No file selected.', 'error')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const importedData = JSON.parse(e.target?.result as string)
+
+      // Validate backup file structure
+      if (!importedData.entries || !Array.isArray(importedData.entries)) {
+        showToast('Invalid backup file format.', 'error')
+        return
+      }
+
+      // Validate date integrity for each entry
+      const validEntries = importedData.entries.filter((entry: JournalEntry) => {
+        if (!entry.id || !entry.date || !entry.title) {
+          console.warn('Skipping invalid entry:', entry)
+          return false
+        }
+
+        // Validate date format
+        const entryDate = new Date(entry.date)
+        if (isNaN(entryDate.getTime())) {
+          console.warn('Skipping entry with invalid date:', entry)
+          return false
+        }
+
+        return true
+      })
+
+      // Merge imported entries with existing ones
+      const existingIds = new Set(entries.value.map(e => e.id))
+      const newEntries = validEntries.filter((entry: JournalEntry) => !existingIds.has(entry.id))
+
+      entries.value = [...entries.value, ...newEntries].sort((a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+
+      localStorage.setItem('journal-entries', JSON.stringify(entries.value))
+      saveToIndexedDB(entries.value)
+
+      // Import settings if available
+      if (importedData.backupSettings) {
+        backupSettings.value = { ...backupSettings.value, ...importedData.backupSettings }
+        localStorage.setItem('backupSettings', JSON.stringify(backupSettings.value))
+      }
+
+      if (importedData.writingReminderSettings) {
+        writingReminderSettings.value = { ...writingReminderSettings.value, ...importedData.writingReminderSettings }
+        localStorage.setItem('writingReminderSettings', JSON.stringify(writingReminderSettings.value))
+      }
+
+      const skippedCount = importedData.entries.length - validEntries.length
+      let message = `Successfully imported ${newEntries.length} new entries!`
+      if (skippedCount > 0) {
+        message += ` (${skippedCount} entries skipped due to invalid data)`
+      }
+      showToast(message)
+
+    } catch (error) {
+      console.error('Import failed:', error)
+      showToast('Import failed. Please check the file format.', 'error')
+    }
+  }
+
+  reader.readAsText(file)
+  input.value = ''
 }
 
-const updateBackupSettings = (settings: BackupSettings) => {
-  backupSettings.value = settings
+const validateData = () => {
+  try {
+    let issuesFound = 0
+    const validEntries = entries.value.filter(entry => {
+      if (!entry.id || !entry.date || !entry.title) {
+        issuesFound++
+        return false
+      }
+
+      const entryDate = new Date(entry.date)
+      if (isNaN(entryDate.getTime())) {
+        issuesFound++
+        return false
+      }
+
+      return true
+    })
+
+    if (issuesFound > 0) {
+      entries.value = validEntries
+      localStorage.setItem('journal-entries', JSON.stringify(entries.value))
+      saveToIndexedDB(entries.value)
+      showToast(`Data validation complete. Fixed ${issuesFound} corrupted entries.`)
+    } else {
+      showToast('Data validation complete. No issues found!')
+    }
+  } catch (error) {
+    console.error('Validation failed:', error)
+    showToast('Data validation failed.', 'error')
+  }
 }
 
-const updateWritingSettings = (settings: WritingReminderSettings) => {
-  writingReminderSettings.value = settings
-}
+const recoverFromIndexedDB = async () => {
+  try {
+    const recoveredEntries = await loadFromIndexedDB()
+    if (recoveredEntries && recoveredEntries.length > 0) {
+      const existingIds = new Set(entries.value.map(e => e.id))
+      const newEntries = recoveredEntries.filter(entry => !existingIds.has(entry.id))
 
-const updatePassword = (password: string) => {
-  userPassword.value = password
-  localStorage.setItem('userPassword', userPassword.value)
-  showToast('Password set successfully.')
-  currentView.value = 'backup'
+      if (newEntries.length > 0) {
+        entries.value = [...entries.value, ...newEntries].sort((a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+        localStorage.setItem('journal-entries', JSON.stringify(entries.value))
+        showToast(`Recovered ${newEntries.length} entries from backup storage!`)
+      } else {
+        showToast('No additional entries found in backup storage.')
+      }
+    } else {
+      showToast('No backup data found in storage.')
+    }
+  } catch (error) {
+    console.error('Recovery failed:', error)
+    showToast('Recovery from backup storage failed.', 'error')
+  }
 }
 
 // Updated savePassword method
@@ -624,6 +768,31 @@ const saveToIndexedDB = async (data: JournalEntry[]) => {
   } catch (error) {
     console.error('Failed to backup to IndexedDB:', error)
   }
+}
+
+const loadFromIndexedDB = async () => {
+  return new Promise<JournalEntry[]>((resolve, reject) => {
+    const request = indexedDB.open('JournalBackup', 1)
+
+    request.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result
+      const transaction = db.transaction(['entries'], 'readonly')
+      const store = transaction.objectStore('entries')
+      const getAllRequest = store.getAll()
+
+      getAllRequest.onsuccess = () => {
+        resolve(getAllRequest.result)
+      }
+
+      getAllRequest.onerror = () => {
+        reject('Failed to load data from IndexedDB')
+      }
+    }
+
+    request.onerror = () => {
+      reject('Failed to open IndexedDB')
+    }
+  })
 }
 
 const verifyPassword = (type: string, inputPassword: string) => {
