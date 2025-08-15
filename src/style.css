@@ -995,3 +995,19 @@ h6 {
 .stagger-delay-9 {
     animation-delay: 0.9s;
 }
+
+/* Added slide-out animation for swipe gesture */
+.slide-out-right {
+    animation: slideOutRight 0.2s ease-in-out forwards;
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}

@@ -217,7 +217,8 @@
         </div>
 
         <!-- Backup Menu -->
-        <div v-else-if="currentView === 'backup'" key="backup" class="backup-view">
+        <div v-else-if="currentView === 'backup'" key="backup" class="backup-view"
+             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
           <div class="view-header">
             <button @click="goHome" class="back-button">
               <ChevronLeft class="icon-large" />
@@ -328,7 +329,8 @@
         </div>
 
         <!-- Calendar View -->
-        <div v-else-if="currentView === 'calendar'" key="calendar" class="calendar-view">
+        <div v-else-if="currentView === 'calendar'" key="calendar" class="calendar-view"
+             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
           <div class="view-header">
             <button @click="goHome" class="back-button">
               <ChevronLeft class="icon-large" />
@@ -380,8 +382,9 @@
           </Transition>
         </div>
 
-        <!-- Writing View -->
-        <div v-else-if="currentView === 'write'" key="write" class="write-view">
+        <!-- Write View -->
+        <div v-else-if="currentView === 'write'" key="write" class="write-view"
+             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
           <div class="view-header">
             <button @click="goHome" class="back-button">
               <ChevronLeft class="icon-large" />
@@ -414,7 +417,8 @@
         </div>
 
         <!-- Entry View -->
-        <div v-else-if="currentView === 'view'" key="view" class="view-entry">
+        <div v-else-if="currentView === 'view'" key="view" class="view-entry"
+             @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
           <div class="view-header">
             <button @click="goHome" class="back-button">
               <ChevronLeft class="icon-large" />
@@ -1127,45 +1131,44 @@ const loadBackupSettings = () => {
 const touchStartX = ref(0)
 const touchStartY = ref(0)
 const isSwipeGesture = ref(false)
+const touchEndX = ref(0)
 
-const handleTouchStart = (event: TouchEvent) => {
-  touchStartX.value = event.touches[0].clientX
-  touchStartY.value = event.touches[0].clientY
-  isSwipeGesture.value = false
-}
-
-const handleTouchMove = (event: TouchEvent) => {
-  if (!touchStartX.value) return
-
-  const touchEndX = event.touches[0].clientX
-  const touchEndY = event.touches[0].clientY
-  const deltaX = touchEndX - touchStartX.value
-  const deltaY = touchEndY - touchStartY.value
-
-  // Check if it's a horizontal swipe (more horizontal than vertical movement)
-  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-    isSwipeGesture.value = true
+const handleTouchStart = (e: TouchEvent) => {
+  if (currentView.value === 'backup' || currentView.value === 'calendar' ||
+      currentView.value === 'write' || currentView.value === 'view') {
+    touchStartX.value = e.touches[0].clientX
+    touchStartY.value = e.touches[0].clientY
   }
 }
 
-const handleTouchEnd = (event: TouchEvent) => {
-  if (!touchStartX.value || !isSwipeGesture.value) return
+const handleTouchMove = (e: TouchEvent) => {
+  if (currentView.value === 'backup' || currentView.value === 'calendar' ||
+      currentView.value === 'write' || currentView.value === 'view') {
+    touchEndX.value = e.touches[0].clientX
+  }
+}
 
-  const touchEndX = event.changedTouches[0].clientX
-  const deltaX = touchEndX - touchStartX.value
+const handleTouchEnd = () => {
+  if (currentView.value === 'backup' || currentView.value === 'calendar' ||
+      currentView.value === 'write' || currentView.value === 'view') {
+    const deltaX = touchEndX.value - touchStartX.value
+    const deltaY = Math.abs(touchStartY.value - touchEndX.value)
 
-  // Swipe from left (deltaX > 100 means swipe right from left edge)
-  if (deltaX > 100 && touchStartX.value < 50) {
-    // Only navigate back from backup and calendar views
-    if (currentView.value === 'backup' || currentView.value === 'calendar') {
-      goHome()
+    // Swipe from left edge to right (return to home)
+    if (touchStartX.value < 50 && deltaX > 100 && deltaY < 100) {
+      // Add slide-out animation class
+      const currentElement = document.querySelector('.write-view, .view-entry, .backup-view, .calendar-view')
+      if (currentElement) {
+        currentElement.classList.add('slide-out-right')
+        setTimeout(() => {
+          goHome()
+          currentElement.classList.remove('slide-out-right')
+        }, 200)
+      } else {
+        goHome()
+      }
     }
   }
-
-  // Reset values
-  touchStartX.value = 0
-  touchStartY.value = 0
-  isSwipeGesture.value = false
 }
 
 onMounted(() => {
