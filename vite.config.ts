@@ -15,7 +15,7 @@ export default defineConfig({
             includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
             manifest: {
                 name: "Daily Journal",
-                short_name: "Journal",
+                short_name: "Daily Journal",
                 description: "Your personal daily reflection companion",
                 theme_color: "#0a0907",
                 background_color: "#0a0907",
