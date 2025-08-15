@@ -558,6 +558,7 @@ h6 {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
     font-family: "Noto Sans KR", sans-serif;
+    font-size: 16px; /* Set font-size to 16px to prevent iOS auto-zoom */
 }
 
 .textarea-field {
